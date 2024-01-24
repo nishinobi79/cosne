@@ -174,7 +174,7 @@ def plot_low_dims(tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding, learning
 if __name__ == "__main__":
 
     # embeddings, colors = generate_high_dims()
-    embeddings = torch.from_numpy(np.load('E:/College_Work/Sem8/btp/code/hgcn/logs/lp/2024_1_17/0/embeddings.npy'))
+    embeddings = torch.from_numpy(np.load('./embeddings/embeddings_airport.npy'))
     
     learning_rate = 5.0
     learning_rate_for_h_loss = 0.1
