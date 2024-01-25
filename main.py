@@ -19,8 +19,11 @@ import hyptorch.nn as pnn
 from htsne_impl import TSNE as hTSNE
 from sklearn.manifold import TSNE
 
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device('cpu')
 
 c = 1.0
+
 
 def random_ball(num_points, dimension, radius=1):
     # First generate random directions by normalizing the length of a
@@ -32,7 +35,7 @@ def random_ball(num_points, dimension, radius=1):
     # the surface area of a ball with a given radius.
     random_radii = torch.rand(num_points) ** (1/dimension)
     # Return the list of random (direction & length) points.
-    return radius * (random_directions * random_radii).T
+    return radius * (random_directions * random_radii).T.to(device)
 
 
 def generate_riemannian_distri(idx, batch=10, dim=2, scale=1., all_loc=[]):
@@ -114,23 +117,30 @@ def run_TSNE(embeddings, learning_rate = 1.0, learning_rate_for_h_loss = 0.0, pe
 
     tsne = TSNE(n_components=2, method='exact', perplexity=perplexity, learning_rate=learning_rate, early_exaggeration=1)
 
-    tsne_embeddings = tsne.fit_transform(embeddings)
-    tsne_embeddings = torch.from_numpy(np.load('E:/College_Work/Sem8/btp/code/hgcn/logs/lp/2024_1_17/0/embeddings.npy'))
+    tsne_embeddings = tsne.fit_transform(embeddings.to('cpu'))
+    #tsne_embeddings = torch.from_numpy(np.load('E:/College_Work/Sem8/btp/code/hgcn/logs/lp/2024_1_17/0/embeddings.npy'))
 
-    print ("\n\n")
+    del tsne
+    print ("tsne done\n\n")
+    
     co_sne = hTSNE(n_components=2, verbose=0, method='exact', square_distances=True, 
                   metric='precomputed', learning_rate_for_h_loss=learning_rate_for_h_loss, student_t_gamma=student_t_gamma, learning_rate=learning_rate, n_iter=1000, perplexity=perplexity, early_exaggeration=early_exaggeration)
 
-    dists = pmath.dist_matrix(embeddings, embeddings, c=1).numpy()
-
+    dists = pmath.dist_matrix(embeddings, embeddings, c=1).cpu().numpy()
 
     CO_SNE_embedding = co_sne.fit_transform(dists, embeddings)
+
+    del co_sne
+    print ("cosne done\n\n")
 
 
     _htsne = hTSNE(n_components=2, verbose=0, method='exact', square_distances=True, 
                   metric='precomputed', learning_rate_for_h_loss=0.0, student_t_gamma=1.0, learning_rate=learning_rate, n_iter=1000, perplexity=perplexity, early_exaggeration=early_exaggeration)
 
     HT_SNE_embeddings = _htsne.fit_transform(dists, embeddings)
+
+    del _htsne
+    print ("htsne done\n\n")
 
 
     return tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding
@@ -144,7 +154,7 @@ def plot_low_dims(tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding, learning
     plt.scatter(tsne_embeddings[:, 0], tsne_embeddings[:, 1], s=30)
     ax.set_aspect('equal')
     plt.axis('off')
-    plt.savefig("./saved_figures/" + "tsne.eps", bbox_inches='tight', dpi=fig.dpi)
+    plt.savefig("./saved_figures/" + "tsne.jpg", bbox_inches='tight', dpi=fig.dpi)
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
@@ -155,7 +165,7 @@ def plot_low_dims(tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding, learning
     plt.scatter(HT_SNE_embeddings[:,0], HT_SNE_embeddings[:,1], s=30)
     ax.set_aspect('equal')
     plt.axis('off')
-    plt.savefig("./saved_figures/" + "HT-SNE.eps", bbox_inches='tight', dpi=fig.dpi)
+    plt.savefig("./saved_figures/" + "HT-SNE.jpg", bbox_inches='tight', dpi=fig.dpi)
 
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111)
@@ -167,14 +177,14 @@ def plot_low_dims(tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding, learning
     ax.set_aspect('equal')
     plt.axis('off')
 
-    plt.savefig("./saved_figures/" + "CO-SNE.eps", bbox_inches='tight', dpi=fig.dpi)
+    plt.savefig("./saved_figures/" + "CO-SNE.jpg", bbox_inches='tight', dpi=fig.dpi)
 
 
 
 if __name__ == "__main__":
 
     # embeddings, colors = generate_high_dims()
-    embeddings = torch.from_numpy(np.load('./embeddings/embeddings_airport.npy'))
+    embeddings = torch.from_numpy(np.load('./embeddings/embeddings_airport.npy')).to(device)
     
     learning_rate = 5.0
     learning_rate_for_h_loss = 0.1
@@ -184,7 +194,11 @@ if __name__ == "__main__":
 
 
     tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding  = run_TSNE(embeddings, learning_rate, learning_rate_for_h_loss, perplexity, early_exaggeration, student_t_gamma)
+    # tsne_embeddings = tsne_embeddings.to('cpu')
+    # HT_SNE_embeddings = HT_SNE_embeddings.to('cpu')
+    # CO_SNE_embedding = CO_SNE_embedding.to('cpu')
+    print(tsne_embeddings.shape)
 
-    plot_low_dims(tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding, colors, learning_rate, learning_rate_for_h_loss, perplexity, early_exaggeration, student_t_gamma)
+    plot_low_dims(tsne_embeddings, HT_SNE_embeddings, CO_SNE_embedding, learning_rate, learning_rate_for_h_loss, perplexity, early_exaggeration, student_t_gamma)
 
 

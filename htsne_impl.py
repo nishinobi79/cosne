@@ -856,10 +856,10 @@ class TSNE(BaseEstimator):
         if self.method == 'barnes_hut':
             X = self._validate_data(X, accept_sparse=['csr'],
                                     ensure_min_samples=2,
-                                    dtype=[np.float32, np.float64])
+                                    dtype=[np.float32, np.float32])
         else:
             X = self._validate_data(X, accept_sparse=['csr', 'csc', 'coo'],
-                                    dtype=[np.float32, np.float64])
+                                    dtype=[np.float32, np.float32])
         
         if self.metric == "precomputed":
             if isinstance(self.init, str) and self.init == 'pca':
@@ -1130,7 +1130,7 @@ class TSNE(BaseEstimator):
         X_new : ndarray of shape (n_samples, n_components)
             Embedding of the training data in low-dimensional space.
         """
-        embedding = self._fit(X, embs)
+        embedding = self._fit(X, embs.cpu())
         self.embedding_ = embedding
         return self.embedding_
 
